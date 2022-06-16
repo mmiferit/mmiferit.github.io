@@ -27,6 +27,7 @@ body {
 }
 
 h1 {
+    text-align: center;
     font-weight: 800;
     color: var(--text-color-primary);
 }
@@ -53,4 +54,14 @@ h4 {
 .row .col {
 
     padding: 10px 10px 10px 10px;
+}
+
+@media screen and (max-width: 800px) {
+    .card-body a {
+        font-size: 1.5vh;
+    }
+
+    .card-body h4 {
+        font-size: 2.0vh;
+    }
 }
