@@ -9,7 +9,6 @@
 
 body {
     height: 100%;
-    overflow: hidden;
     font-family: 'Sora', sans-serif;
     background-color: var(--background-color-primary);
 }
@@ -17,45 +16,48 @@ body {
 .navbar {
     font-size: 20px;
     font-weight: 600;
-    position: absolute;
     top: 20px;
-    z-index: 2;
+    background: transparent;
     width: 100%;
 }
 
-#carousel {
-    position: relative;
-    z-index: 1;
-    display: block;
-    text-align: left;
+.container p {
+    font-weight: 400;
+    color: var(--text-color-primary);
 }
 
-.carousel-caption {
-    height: 90%;
-}
-
-.carousel p {
-    font-size: 4.7vw;
+h1 {
+    text-align: center;
     font-weight: 800;
     color: var(--text-color-secondary);
 }
 
-.carousel-inner img {
-    object-fit: cover;
-    filter: blur(6px);
-    -webkit-filter: blur(6px);
+h4 {
+    font-weight: 800;
+    color: var(--text-color-secondary);
+}
+
+.categ {
+    margin-left: auto;
+    margin-right: auto;
+    background-color: var(--card-background-color);
+}
+
+.categ img {
+    max-width: 200px;
+    max-height: 200px;
+    display: block;
+    margin: auto;
+}
+
+.row #categ {
+
+    padding: 10px 10px 10px 10px;
 }
 
 @media screen and (max-width: 800px) {
-    .carousel p {
-        margin-top: 50px;
-        font-size: 3.8vh;
-    }
-}
 
-@media screen and (max-height: 450px) {
-    .carousel p {
-        font-size: 6vh;
-        font-weight: 800;
+    .card-body h4 {
+        font-size: 1.8vh;
     }
 }
