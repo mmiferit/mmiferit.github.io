@@ -12,8 +12,18 @@ import {
   ref,
   set,
   push,
-  onValue
+  get,
+  child,
+  remove
 } from "https://www.gstatic.com/firebasejs/9.8.2/firebase-database.js";
+
+import {
+  getStorage,
+  ref as refStorage,
+  uploadBytes,
+  getDownloadURL
+}
+from "https://www.gstatic.com/firebasejs/9.8.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA624LlFogz1fHBFnEkUd5MSS8T33X4ekI",
@@ -29,6 +39,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const database = getDatabase();
+const storage = getStorage();
 
 //Check user auth on page load, show appropriate button for signing in and out.
 window.onload = function () {
@@ -36,6 +47,7 @@ window.onload = function () {
   var navbar = document.getElementById("navbarItems");
   auth.onAuthStateChanged(function (user) {
     if (user) {
+      loadUserProducts();
       btn.innerText = "Odjava"
       btn.classList.remove("btn-primary");
       btn.classList.add("btn-outline-danger");
@@ -114,14 +126,12 @@ document.getElementById('btn_add_product').addEventListener('click', () => {
 })
 
 document.getElementById('btn_publish').addEventListener('click', () => {
-
   var title = document.getElementById('product_title').value;
   var description = document.getElementById('product_description').value;
   var price = document.getElementById('product_price').value;
   var category = document.getElementById('product_category').value;
-  var imageURLs = "";
   if (title && description && price && category) {
-    writeProductData(auth.currentUser.uid, title, description, price, category, imageURLs)
+    writeProductData(auth.currentUser.uid, title, description, price, category)
     clearInputs();
   } else
     alert("Neka od polja su prazna")
@@ -137,17 +147,105 @@ function writeUserData(userId, email, name, surname, phoneNumber) {
   });
 }
 
-function writeProductData(userId, title, description, price, category, imageURLs) {
+var files = [];
+document.getElementById("files").addEventListener("change", function (e) {
+  files = e.target.files;
+  for (let i = 0; i < files.length; i++) {
+    console.log(files[i]);
+  }
+});
+
+
+function loadUserProducts() {
+
+  var listingsModal = document.getElementById('userListings');
+  listingsModal.innerHTML = "";
+  var check = false;
+  get(child(ref(database), `products/`)).then((snapshot) => {
+    snapshot.forEach(function (child) {
+      if (snapshot.exists()) {
+        var userID = child.child('userID').val();
+        var productID = child.key
+        if (auth.currentUser.uid == userID) {
+          check = true;
+          var formGroup = document.createElement('div');
+          formGroup.classList.add('form-group');
+          formGroup.classList.add('row');
+          var label = document.createElement('label');
+          label.setAttribute('for', productID);
+          label.classList.add('col-sm-2');
+          label.classList.add('col-form-label');
+          label.innerHTML = child.child('title').val()
+
+          var btnDiv = document.createElement('div');
+          btnDiv.classList.add('col-sm-10');
+
+          var deleteListingBtn = document.createElement('input');
+          deleteListingBtn.setAttribute('type', 'button');
+          deleteListingBtn.classList.add('btn');
+          deleteListingBtn.classList.add('btn-danger');
+          deleteListingBtn.classList.add('mb-3');
+          deleteListingBtn.value = "Obriši oglas"
+
+          deleteListingBtn.addEventListener('click', () => {
+            remove(ref(database, 'products/' + productID));
+            alert('Oglas uspješno izbrisan.');
+            loadUserProducts();
+          })
+
+          btnDiv.appendChild(deleteListingBtn);
+
+          formGroup.appendChild(label);
+          formGroup.appendChild(btnDiv);
+
+          listingsModal.appendChild(formGroup);
+        }
+      }
+    });
+    if (!check) {
+      var p = document.createElement('p');
+      p.innerHTML = "Nemate objavljenih oglasa."
+      listingsModal.appendChild(p);
+    }
+  });
+}
+
+function writeProductData(userId, title, description, price, category) {
+
   var productsRef = ref(database, 'users/' + userId + '/products/');
   var newProductKey = push(productsRef).key;
 
-  set(ref(database, 'users/' + userId + '/products/' + newProductKey), {
-    title: title,
-    description: description,
-    price: price,
-    category: category,
-    imageURLs: imageURLs
-  });
+  if (files.length != 0) {
+    for (let i = 0; i < files.length; i++) {
+      var storageRef = refStorage(storage, newProductKey + files[i].name);
+      uploadBytes(storageRef, files[i]).then((snapshot) => {
+        getDownloadURL(storageRef).then((downloadURL) => {
+
+          set(ref(database, 'products/' + newProductKey), {
+            title: title,
+            description: description,
+            price: price,
+            category: category,
+            imageURL: downloadURL,
+            userID: userId
+          });
+
+          loadUserProducts()
+        })
+      });
+    }
+  } else {
+    set(ref(database, 'products/' + newProductKey), {
+      title: title,
+      description: description,
+      price: price,
+      category: category,
+      imageURL: "",
+      userID: userId
+    });
+
+    loadUserProducts()
+  }
 }
 
 //Clear inputs after signing in or registering
@@ -164,4 +262,5 @@ function clearInputs() {
   document.getElementById('product_description').value = "";
   document.getElementById('product_price').value = "";
   document.getElementById('product_category').value = "Ostalo";
+  document.getElementById('files').value = "";
 }
